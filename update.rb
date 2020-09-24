@@ -3,7 +3,7 @@ require 'date'
 count = ARGV[0] || 0
 count = count.to_i
 # recent changes entries only last 30 days
-count = count.clamp(1, 30)
+count = [0, count, 30].sort[1]
 
 start_time = Time.now
 
