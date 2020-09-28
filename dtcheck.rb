@@ -158,7 +158,10 @@ puts html('ul'){
 
 puts out
 
+puts html('hr')
+
 end_time = Time.now
 puts html('p', "Generated at #{end_time} in #{(end_time - start_time).ceil} seconds.")
+puts html('p'){ html('a', 'Source code', href: "https://github.com/MatmaRex/dtcheck") }
 
 puts html('script', src: 'script.js')
