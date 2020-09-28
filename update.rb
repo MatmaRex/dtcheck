@@ -19,5 +19,7 @@ count.times {
 	system "ruby render.rb #{date.iso8601} > dtcheck-#{date.iso8601}.html"
 }
 
+system "ruby render_stats.rb > dtstats.html"
+
 end_time = Time.now
 puts "Total time: #{end_time - start_time} seconds."
