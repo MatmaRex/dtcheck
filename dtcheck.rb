@@ -5,6 +5,16 @@ require 'pp'
 require 'cgi'
 require 'date'
 
+CONDUIT_API_TOKEN = File.read('.conduit_api_token').strip rescue nil
+
+def conduit_query method, params
+	return nil if !CONDUIT_API_TOKEN
+
+	api = URI("https://phabricator.wikimedia.org/api/#{method}")
+	resp = Net::HTTP.post_form api, params.merge({ 'api.token' => CONDUIT_API_TOKEN })
+	return JSON.parse resp.read_body
+end
+
 def html name, text = nil, **attrs, &contents
 	attrs_str = attrs.map{|k,v| " #{CGI.escapeHTML k.to_s}=\"#{CGI.escapeHTML v.to_s}\"" }.join ''
 	s = ''
@@ -117,17 +127,29 @@ sites.each do |site|
 		diff = compare['compare']['*'] rescue next
 		if diff =~ /diff-deletedline/
 			toc[site][:suspicious] += 1
-			notes = [
-				"Tags: #{(rc['tags'] - ['discussiontools', 'discussiontools-reply']).join ', '}",
-				"Changed lines: +#{diff.scan(/diff-addedline/).length} −#{diff.scan(/diff-deletedline/).length}"
-			]
+			notes = []
+
+			notes << html('li', "Tags: #{(rc['tags'] - ['discussiontools', 'discussiontools-reply']).join ', '}")
+			notes << html('li', "Changed lines: +#{diff.scan(/diff-addedline/).length} −#{diff.scan(/diff-deletedline/).length}")
+
+			resp = conduit_query 'maniphest.search', {'constraints[query]' => rev.to_s}
+			if resp
+				task_ids = resp['result']['data'].map{|a| a['id'] }
+				if !task_ids.empty?
+					notes << html('li'){
+						html('abbr', "Related tasks", title: 'Tasks where this revision ID is mentioned') +
+						": " +
+						task_ids.map{|t|
+							html 'a', "T#{t}", href: "https://phabricator.wikimedia.org/T#{t}"
+						}.join(', ') }
+				end
+			end
+
 			rows << html('tr'){
 				html('td'){ html('button', "Toggle diff", class: 'diffbutton') } +
 				html('td', rc['timestamp']) +
 				html('td'){ html('a', rev, href: "https://#{site}/?diff=#{rev}") } +
-				html('td'){ html('ul'){
-					notes.map{|line| html 'li', line }.join ''
-				} }
+				html('td'){ html('ul'){ notes.join '' } }
 			} + html('tr', style: 'display: none;'){
 				html('td', colspan: 4){ make_diff_table diff }
 			}
