@@ -85,9 +85,9 @@ puts html('h1', title)
 
 yesterday = Date.strptime(day_to_check).prev_day.iso8601
 tomorrow = Date.strptime(day_to_check).next_day.iso8601
-puts html('a', 'yesterday', href: "dtcheck-#{yesterday}.html")
+puts html('a', 'Previous', href: "dtcheck-#{yesterday}.html")
 puts '•'
-puts html('a', 'tomorrow', href: "dtcheck-#{tomorrow}.html")
+puts html('a', 'Next', href: "dtcheck-#{tomorrow}.html")
 
 toc = Hash[ sites.map{|site|
 	[ site, {
