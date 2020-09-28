@@ -93,7 +93,7 @@ sites.each do |site|
 			database[:sites][site][:revisions][rev][:tags] = rc['tags']
 			database[:sites][site][:revisions][rev][:timestamp] = rc['timestamp']
 
-			compare = api_query site, "action=compare&format=json&fromrev=#{rev}&torelative=prev&uselang=en"
+			compare = api_query site, "action=compare&format=json&fromrev=#{rev}&torelative=prev&uselang=en" rescue next
 			diff = compare['compare']['*'] rescue next
 			if diff =~ /diff-deletedline/
 				database[:sites][site][:revisions][rev][:suspicious] = true
