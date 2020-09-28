@@ -124,7 +124,7 @@ sites.each do |site|
 			rows << html('tr'){
 				html('td'){ html('button', "Toggle diff", class: 'diffbutton') } +
 				html('td', rc['timestamp']) +
-				html('td'){ html('a', rev, href: "https://#{site}/w/?oldid=#{rev}&diff=prev") } +
+				html('td'){ html('a', rev, href: "https://#{site}/?diff=#{rev}") } +
 				html('td'){ html('ul'){
 					notes.map{|line| html 'li', line }.join ''
 				} }
