@@ -137,8 +137,7 @@ sites.each do |site|
 
 	out << html('p', "#{toc[site][:suspicious]}/#{toc[site][:total]} look suspicious")
 	if toc[site][:suspicious].nonzero?
-		out << html('button', "Toggle all diffs", class: 'diffbuttonall')
-		out << html('table', class: 'wikitable'){ rows.join '' }
+		out << html('table', class: 'wikitable difftable'){ rows.join '' }
 	end
 end
 
@@ -146,6 +145,10 @@ suspicious = toc.map{|site, data| data[:suspicious] }.inject(:+)
 total = toc.map{|site, data| data[:total] }.inject(:+)
 percent = total.nonzero? ? (suspicious.to_f/total*100).round(1) : 0
 puts html 'p', "#{suspicious} suspicious edits in #{total} replies (#{percent}%)."
+
+if suspicious.nonzero?
+	puts html('button', "Toggle all diffs", class: 'diffbuttonall')
+end
 
 puts html('ul'){
 	toc.map{|site, data|
