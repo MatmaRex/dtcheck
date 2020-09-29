@@ -52,13 +52,12 @@ row_info = {
 	'suspc' => false,
 }
 row_info.each do |rowtype, active|
-	puts html('style'){ "tr.#{rowtype} > *:not([rowspan]) { display: none; }" }
-	onchange = 'this.parentNode.previousElementSibling.disabled = this.checked;'
+	puts html('style', media: active ? 'not all' : 'all'){ "tr.#{rowtype} > *:not([rowspan]) { display: none; }" }
+	onchange = "this.parentNode.previousElementSibling.media = this.checked ? 'not all' : 'all';"
 	puts html('label'){
 		html('input', type: 'checkbox', checked: active, onchange: onchange) + ' ' +
 		html(nil, rowtype)
 	}
-	puts html('script'){ "document.currentScript.previousElementSibling.previousElementSibling.disabled = #{active};" }
 end
 
 puts '<table class="wikitable">'
