@@ -125,4 +125,20 @@ puts html('p', "Generated at #{database[:last_updated]} in #{(database[:last_upd
 puts html('p'){ html('a', 'Source code', href: "https://github.com/MatmaRex/dtcheck") }
 
 puts html('style', '.summary { font-weight: bold; background: #c6cbd1 !important; }')
-puts html('style', 'th { white-space: nowrap; }')
+puts html('style', <<STYLE)
+@supports (writing-mode: sideways-lr) {
+	th a {
+		white-space: nowrap;
+		writing-mode: sideways-lr;
+		padding: 0.2em 0;
+	}
+}
+@supports (writing-mode: vertical-rl) and (not (writing-mode: sideways-lr)) {
+	th a {
+		white-space: nowrap;
+		writing-mode: vertical-rl;
+		padding: 0.2em 0;
+		transform: rotate(180deg);
+	}
+}
+STYLE
