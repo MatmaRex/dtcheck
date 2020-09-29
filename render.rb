@@ -86,6 +86,20 @@ database[:sites].each do |site, site_data|
 			notes << html('li', "Tags: #{(data[:tags] - ['discussiontools', 'discussiontools-reply']).join ', '}")
 			notes << html('li', "Changed lines: +#{diff.scan(/diff-addedline/).length} −#{diff.scan(/diff-deletedline/).length}")
 
+			# wow, this is awful, but i don't want any big dependencies to parse it better or generate my own diffs
+			has_deleted_lines_nonempty = diff =~ /<td class="diff-deletedline">[^<]+<\/td>\s*<td colspan="2" class="diff-empty">/
+			has_deleted_chars_nonwhitespace = diff =~ /<del class="diffchange diffchange-inline">[^<]*[^\s<][^<]*<\/del>/
+			if !has_deleted_lines_nonempty && !has_deleted_chars_nonwhitespace
+				notes << html('li', "White-space deletions only")
+			else
+				notes << html('li'){ html('strong', "Non-white-space deletions") }
+			end
+
+			has_added_chars = diff =~ /<ins class="diffchange diffchange-inline">[^<]+<\/ins>/
+			if has_added_chars
+				notes << html('li', "Additions on existing lines")
+			end
+
 			if !data[:task_ids].empty?
 				notes << html('li'){
 					html('abbr', "Related tasks", title: 'Tasks where this revision ID is mentioned') +
