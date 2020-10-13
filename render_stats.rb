@@ -24,6 +24,25 @@ puts '<meta charset="utf-8">'
 puts '<link rel="stylesheet" type="text/css" href="styles.css">'
 puts '<link rel="stylesheet" type="text/css" href="styles-mw.css">'
 
+puts html('style', '.summary { font-weight: bold; background: #c6cbd1 !important; }')
+puts html('style', <<STYLE)
+@supports (writing-mode: sideways-lr) {
+	th a {
+		white-space: nowrap;
+		writing-mode: sideways-lr;
+		padding: 0.2em 0;
+	}
+}
+@supports (writing-mode: vertical-rl) and (not (writing-mode: sideways-lr)) {
+	th a {
+		white-space: nowrap;
+		writing-mode: vertical-rl;
+		padding: 0.2em 0;
+		transform: rotate(180deg);
+	}
+}
+STYLE
+
 title = "Reply tool check statistics"
 puts html('title', title)
 puts html('h1', title)
@@ -123,22 +142,3 @@ puts '</table>'
 
 puts html('p', "Generated at #{database[:last_updated]} in #{(database[:last_updated_duration]).ceil} seconds.")
 puts html('p'){ html('a', 'Source code', href: "https://github.com/MatmaRex/dtcheck") }
-
-puts html('style', '.summary { font-weight: bold; background: #c6cbd1 !important; }')
-puts html('style', <<STYLE)
-@supports (writing-mode: sideways-lr) {
-	th a {
-		white-space: nowrap;
-		writing-mode: sideways-lr;
-		padding: 0.2em 0;
-	}
-}
-@supports (writing-mode: vertical-rl) and (not (writing-mode: sideways-lr)) {
-	th a {
-		white-space: nowrap;
-		writing-mode: vertical-rl;
-		padding: 0.2em 0;
-		transform: rotate(180deg);
-	}
-}
-STYLE
