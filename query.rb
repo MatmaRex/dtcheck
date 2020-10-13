@@ -45,20 +45,51 @@ end
 
 sites = %w[
 en.wikipedia.org
+en.wikiversity.org
 www.mediawiki.org
+meta.wikimedia.org
 
+am.wikipedia.org
 ar.wikipedia.org
+as.wikipedia.org
+bh.wikipedia.org
 ca.wikipedia.org
 ckb.wikipedia.org
 cs.wikipedia.org
+es.wikipedia.org
+eu.wikipedia.org
+fa.wikipedia.org
+fi.wikipedia.org
 fr.wikipedia.org
+he.wikipedia.org
+hi.wikipedia.org
 hu.wikipedia.org
+hy.wikipedia.org
+is.wikipedia.org
+it.wikipedia.org
 ja.wikipedia.org
 ka.wikipedia.org
 ko.wikipedia.org
+lt.wikipedia.org
+mai.wikipedia.org
+mnw.wikipedia.org
+mr.wikipedia.org
+my.wikipedia.org
+ne.wikipedia.org
 nl.wikipedia.org
+no.wikipedia.org
+nqo.wikipedia.org
+pa.wikipedia.org
+pl.wikipedia.org
+pt.wikipedia.org
+sat.wikipedia.org
+si.wikipedia.org
 sr.wikipedia.org
 sv.wikipedia.org
+ta.wikipedia.org
+th.wikipedia.org
+tr.wikipedia.org
+uk.wikipedia.org
 vi.wikipedia.org
 zh.wikipedia.org
 ].map{|s| s.to_sym}
