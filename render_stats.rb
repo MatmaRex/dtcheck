@@ -24,25 +24,6 @@ puts '<meta charset="utf-8">'
 puts '<link rel="stylesheet" type="text/css" href="styles.css">'
 puts '<link rel="stylesheet" type="text/css" href="styles-mw.css">'
 
-puts html('style', '.summary { font-weight: bold; background: #c6cbd1 !important; }')
-puts html('style', <<STYLE)
-@supports (writing-mode: sideways-lr) {
-	th a {
-		white-space: nowrap;
-		writing-mode: sideways-lr;
-		padding: 0.2em 0;
-	}
-}
-@supports (writing-mode: vertical-rl) and (not (writing-mode: sideways-lr)) {
-	th a {
-		white-space: nowrap;
-		writing-mode: vertical-rl;
-		padding: 0.2em 0;
-		transform: rotate(180deg);
-	}
-}
-STYLE
-
 title = "Reply tool check statistics"
 puts html('title', title)
 puts html('h1', title)
@@ -79,7 +60,7 @@ row_info.each do |rowtype, active|
 	}
 end
 
-puts '<table class="wikitable">'
+puts '<table class="wikitable statistics">'
 puts '<tr>'
 puts html('th', "Site", colspan: 2)
 headers.each{|h| puts html('th'){ html 'a', h, href: "dtcheck-#{h}.html" } }

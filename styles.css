@@ -5,3 +5,24 @@ body {
 table {
 	width: 100%;
 }
+
+.statistics .summary {
+	font-weight: bold;
+	background: #c6cbd1 !important;
+}
+
+@supports (writing-mode: sideways-lr) {
+	.statistics th a {
+		white-space: nowrap;
+		writing-mode: sideways-lr;
+		padding: 0.2em 0;
+	}
+}
+@supports (writing-mode: vertical-rl) and (not (writing-mode: sideways-lr)) {
+	.statistics th a {
+		white-space: nowrap;
+		writing-mode: vertical-rl;
+		padding: 0.2em 0;
+		transform: rotate(180deg);
+	}
+}
