@@ -58,7 +58,7 @@ puts html('ul'){
 			site_total =
 				data[:revisions].values.select{|r| r[:timestamp].start_with? day_to_check }.length
 
-			html('a', site, href: '#' + site.to_s) +
+			html(site_suspicious != 0 ? 'a' : nil, site, href: '#' + site.to_s) +
 			html(nil, " (#{site_suspicious}/#{site_total})")
 		}
 	}.join ''
@@ -66,6 +66,16 @@ puts html('ul'){
 
 out = []
 database[:sites].each do |site, site_data|
+	revisions = site_data[:revisions].select{|rev, data| data[:timestamp].start_with? day_to_check }
+	site_suspicious =
+		revisions.select{|rev, data| data[:timestamp].start_with? day_to_check }.count{|rev, data| data[:suspicious] }
+	site_total =
+		revisions.select{|rev, data| data[:timestamp].start_with? day_to_check }.length
+
+	if site_suspicious == 0
+		next
+	end
+
 	out << html('h2', site, id: site)
 
 	rows = []
@@ -75,8 +85,6 @@ database[:sites].each do |site, site_data|
 		html('th', "Revision") +
 		html('th', "Notes")
 	}
-
-	revisions = site_data[:revisions].select{|rev, data| data[:timestamp].start_with? day_to_check }
 
 	revisions.each do |rev, data|
 		if data[:suspicious]
@@ -120,15 +128,8 @@ database[:sites].each do |site, site_data|
 		end
 	end
 
-	site_suspicious =
-		revisions.select{|rev, data| data[:timestamp].start_with? day_to_check }.count{|rev, data| data[:suspicious] }
-	site_total =
-		revisions.select{|rev, data| data[:timestamp].start_with? day_to_check }.length
-
 	out << html('p', "#{site_suspicious}/#{site_total} look suspicious")
-	if site_suspicious.nonzero?
-		out << html('table', class: 'wikitable difftable'){ rows.join '' }
-	end
+	out << html('table', class: 'wikitable difftable'){ rows.join '' }
 end
 
 
