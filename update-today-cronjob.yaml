@@ -1,0 +1,29 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: update-today
+  labels:
+    name: dtcheck.update
+    # The toolforge=tool label will cause $HOME and other paths to be mounted from Toolforge
+    toolforge: tool
+spec:
+  schedule: "0 0-8,10-23 * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            toolforge: tool
+        spec:
+          containers:
+          - name: bot
+            workingDir: /data/project/dtcheck/public_html
+            image: docker-registry.tools.wmflabs.org/toolforge-ruby25-sssd-base:latest
+            args:
+            - ruby
+            - update.rb
+            env:
+            - name: HOME
+              value: /data/project/dtcheck
+          restartPolicy: OnFailure

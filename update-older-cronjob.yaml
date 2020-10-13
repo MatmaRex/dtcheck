@@ -2,13 +2,13 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: update
+  name: update-older
   labels:
     name: dtcheck.update
     # The toolforge=tool label will cause $HOME and other paths to be mounted from Toolforge
     toolforge: tool
 spec:
-  schedule: "@hourly"
+  schedule: "0 9 * * *"
   jobTemplate:
     spec:
       template:
@@ -23,6 +23,7 @@ spec:
             args:
             - ruby
             - update.rb
+            - "14"
             env:
             - name: HOME
               value: /data/project/dtcheck
