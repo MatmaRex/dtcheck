@@ -26,3 +26,22 @@ table {
 		transform: rotate(180deg);
 	}
 }
+
+.statistics tr:first-child th {
+	position: sticky;
+	top: 0;
+	z-index: 3;
+}
+
+.statistics tr:first-child th:first-child {
+	position: sticky;
+	top: 0;
+	left: 0;
+	z-index: 2;
+}
+
+.statistics th:first-child[rowspan] {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+}
