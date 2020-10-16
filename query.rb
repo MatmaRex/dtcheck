@@ -115,23 +115,36 @@ sites.each do |site|
 	}
 
 	recentchanges = api_query_continue site, "action=query&format=json&list=recentchanges" +
-		"&rctag=discussiontools-reply&rcprop=ids|timestamp|tags&rclimit=100" +
+		"&rctag=discussiontools-reply&rcprop=ids|timestamp|tags|sizes&rclimit=100" +
 		"&rcend=#{from_date}T00:00:00Z&rcstart=#{to_date}T23:59:59Z"
 	recentchanges['query']['recentchanges'].each do |rc|
 		rev = rc['revid']
-		if !database[:sites][site][:revisions][rev]
-			database[:sites][site][:revisions][rev] ||= {}
-			database[:sites][site][:revisions][rev][:tags] = rc['tags']
-			database[:sites][site][:revisions][rev][:timestamp] = rc['timestamp']
+		suspicious = false
 
+		database[:sites][site][:revisions][rev] ||= {}
+		database[:sites][site][:revisions][rev][:tags] = rc['tags']
+		database[:sites][site][:revisions][rev][:timestamp] = rc['timestamp']
+		database[:sites][site][:revisions][rev][:diffsize] = rc['newlen'] - rc['oldlen'] rescue nil
+
+		if database[:sites][site][:revisions][rev][:diffsize] && database[:sites][site][:revisions][rev][:diffsize] > 10_000
+			suspicious = true
+		end
+
+		if !database[:sites][site][:revisions][rev][:diff]
 			compare = api_query site, "action=compare&format=json&fromrev=#{rev}&torelative=prev&uselang=en" rescue next
 			diff = compare['compare']['*'] rescue next
-			if diff =~ /diff-deletedline/
-				database[:sites][site][:revisions][rev][:suspicious] = true
-				database[:sites][site][:revisions][rev][:diff] = diff
-			end
+		else
+			diff = database[:sites][site][:revisions][rev][:diff]
 		end
-		if database[:sites][site][:revisions][rev][:suspicious]
+
+		if diff =~ /diff-deletedline/
+			suspicious = true
+		end
+
+		if suspicious
+			database[:sites][site][:revisions][rev][:suspicious] = suspicious
+			database[:sites][site][:revisions][rev][:diff] = diff
+
 			resp = conduit_query 'maniphest.search', {'constraints[query]' => rev}
 			if resp
 				task_ids = resp['result']['data'].map{|a| a['id'] }

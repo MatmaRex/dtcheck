@@ -99,13 +99,17 @@ database[:sites].each do |site, site_data|
 			has_deleted_chars_nonwhitespace = diff =~ /<del class="diffchange diffchange-inline">[^<]*[^\s<][^<]*<\/del>/
 			if !has_deleted_lines_nonempty && !has_deleted_chars_nonwhitespace
 				notes << html('li', "White-space deletions only")
-			else
+			elsif diff.scan(/diff-deletedline/).length.nonzero?
 				notes << html('li'){ html('strong', "Non-white-space deletions") }
 			end
 
 			has_added_chars = diff =~ /<ins class="diffchange diffchange-inline">[^<]+<\/ins>/
 			if has_added_chars
 				notes << html('li', "Additions on existing lines")
+			end
+
+			if data[:diffsize] && data[:diffsize] > 10_000
+				notes << html('li'){ html('strong', "Unreasonably large diff, probably corruption") }
 			end
 
 			if !data[:task_ids].empty?
