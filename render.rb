@@ -91,7 +91,15 @@ database[:sites].each do |site, site_data|
 			diff = data[:diff]
 			notes = []
 
-			notes << html('li', "Tags: #{(data[:tags] - ['discussiontools', 'discussiontools-reply']).join ', '}")
+			notes << html('li'){
+				interesting_tags = data[:tags] - ['discussiontools', 'discussiontools-reply']
+				tags_html = interesting_tags.map{|t|
+					sus_tag = ['mw-reverted'].include?(t)
+					html(sus_tag ? 'strong' : nil, t)
+				}
+				"Tags: #{tags_html.join ', '}"
+			}
+
 			notes << html('li', "Changed lines: +#{diff.scan(/diff-addedline/).length} −#{diff.scan(/diff-deletedline/).length}")
 
 			# wow, this is awful, but i don't want any big dependencies to parse it better or generate my own diffs
