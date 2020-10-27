@@ -27,6 +27,19 @@ table {
 	}
 }
 
+/* Fix the rendering of borders of sticky header cells */
+.statistics {
+	border-collapse: separate !important;
+	border-spacing: 0 !important;
+	border-width: 1px 0 0 1px !important;
+}
+
+.statistics td,
+.statistics th {
+	border-width: 0 1px 1px 0 !important;
+}
+
+/* Sticky headers */
 .statistics tr:first-child th {
 	position: sticky;
 	top: 0;
