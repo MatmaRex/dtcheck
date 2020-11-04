@@ -47,10 +47,11 @@ percent = total.nonzero? ? (suspicious.to_f/total*100).round(1) : 0
 puts html 'p', "#{suspicious} suspicious edits in #{total} replies (#{percent}%)."
 
 if suspicious.nonzero?
-	puts html('button', "Toggle all diffs", class: 'diffbuttonall')
+	puts html('p'){ html('button', "Toggle all diffs", class: 'diffbuttonall') }
 end
 
-puts html('ul'){
+
+toc = html('ul'){
 	database[:sites].map{|site, data|
 		html('li') {
 			site_suspicious =
@@ -62,6 +63,9 @@ puts html('ul'){
 			html(nil, " (#{site_suspicious}/#{site_total})")
 		}
 	}.join ''
+}
+puts html('details'){
+	html('summary', "Table of contents / Overview") + toc
 }
 
 out = []

@@ -6,6 +6,13 @@ table {
 	width: 100%;
 }
 
+details {
+	border: 1px solid #a2a9b1;
+	padding: 5px;
+	border-radius: 5px;
+	width: fit-content;
+}
+
 .statistics .summary {
 	font-weight: bold;
 	background: #c6cbd1 !important;
