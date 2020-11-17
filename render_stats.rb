@@ -34,7 +34,7 @@ rows = database[:sites].keys.map{|site| [site, []] }.to_h
 
 oldest_rev = database[:sites].values.map{|data| data[:revisions].values }.inject(:+).map{|a| a[:timestamp] }.min
 
-Date.strptime(oldest_rev).upto(Date.today) do |day|
+Date.strptime(oldest_rev).upto(Date.today).reverse_each do |day|
 	headers << day.iso8601
 	database[:sites].each do |site, data|
 		rows[site] << {
@@ -67,31 +67,32 @@ headers.each{|h| puts html('th'){ html 'a', h, href: "dtcheck-#{h}.html" } }
 puts html('th', "All days", class: 'summary')
 puts '</tr>'
 
+out = []
 rows.each do |site, data|
 	suspicious = data.map{|d| d[:suspicious] }.inject(:+)
 	total = data.map{|d| d[:total] }.inject(:+)
 
-	puts '<tr class="sus">'
-	puts html('th', site, rowspan: 4)
-	puts html('th', "sus")
-	data.each{|d| puts html('td', d[:suspicious]) }
-	puts html('td', suspicious)
-	puts '</tr>'
-	puts '<tr class="good">'
-	puts html('th', "good")
-	data.each{|d| puts html('td', d[:total] - d[:suspicious]) }
-	puts html('td', total - suspicious)
-	puts '</tr>'
-	puts '<tr class="total">'
-	puts html('th', "total")
-	data.each{|d| puts html('td', d[:total]) }
-	puts html('td', total)
-	puts '</tr>'
-	puts '<tr class="suspc">'
-	puts html('th', "suspc")
-	data.each{|d| puts html('td', percent(d[:suspicious], d[:total] )) }
-	puts html('td', percent(suspicious, total) )
-	puts '</tr>'
+	out << '<tr class="sus">'
+	out << html('th', site, rowspan: 4)
+	out << html('th', "sus")
+	data.each{|d| out << html('td', d[:suspicious]) }
+	out << html('td', suspicious)
+	out << '</tr>'
+	out << '<tr class="good">'
+	out << html('th', "good")
+	data.each{|d| out << html('td', d[:total] - d[:suspicious]) }
+	out << html('td', total - suspicious)
+	out << '</tr>'
+	out << '<tr class="total">'
+	out << html('th', "total")
+	data.each{|d| out << html('td', d[:total]) }
+	out << html('td', total)
+	out << '</tr>'
+	out << '<tr class="suspc">'
+	out << html('th', "suspc")
+	data.each{|d| out << html('td', percent(d[:suspicious], d[:total] )) }
+	out << html('td', percent(suspicious, total) )
+	out << '</tr>'
 end
 
 suspicious = headers.length.times.map{|i| rows.map{|site, r| r[i][:suspicious] }.inject(:+) }
@@ -118,6 +119,8 @@ puts html('th', "suspc", class: 'summary')
 suspicious.zip(total).each{|s, t| puts html('td', percent(s, t)) }
 puts html('td', percent(suspicious.inject(:+), total.inject(:+)), class: 'summary')
 puts '</tr>'
+
+puts out.join("\n")
 
 puts '</table>'
 
