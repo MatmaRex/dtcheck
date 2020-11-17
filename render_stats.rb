@@ -63,8 +63,8 @@ end
 puts '<table class="wikitable statistics">'
 puts '<tr>'
 puts html('th', "Site", colspan: 2)
-headers.each{|h| puts html('th'){ html 'a', h, href: "dtcheck-#{h}.html" } }
 puts html('th', "All days", class: 'summary')
+headers.each{|h| puts html('th'){ html 'a', h, href: "dtcheck-#{h}.html" } }
 puts '</tr>'
 
 out = []
@@ -75,23 +75,23 @@ rows.each do |site, data|
 	out << '<tr class="sus">'
 	out << html('th', site, rowspan: 4)
 	out << html('th', "sus")
-	data.each{|d| out << html('td', d[:suspicious]) }
 	out << html('td', suspicious)
+	data.each{|d| out << html('td', d[:suspicious]) }
 	out << '</tr>'
 	out << '<tr class="good">'
 	out << html('th', "good")
-	data.each{|d| out << html('td', d[:total] - d[:suspicious]) }
 	out << html('td', total - suspicious)
+	data.each{|d| out << html('td', d[:total] - d[:suspicious]) }
 	out << '</tr>'
 	out << '<tr class="total">'
 	out << html('th', "total")
-	data.each{|d| out << html('td', d[:total]) }
 	out << html('td', total)
+	data.each{|d| out << html('td', d[:total]) }
 	out << '</tr>'
 	out << '<tr class="suspc">'
 	out << html('th', "suspc")
-	data.each{|d| out << html('td', percent(d[:suspicious], d[:total] )) }
 	out << html('td', percent(suspicious, total) )
+	data.each{|d| out << html('td', percent(d[:suspicious], d[:total] )) }
 	out << '</tr>'
 end
 
@@ -101,23 +101,23 @@ total = headers.length.times.map{|i| rows.map{|site, r| r[i][:total] }.inject(:+
 puts '<tr class="sus">'
 puts html('th', "All sites", rowspan: 4, class: 'summary')
 puts html('th', "sus", class: 'summary')
-suspicious.each{|s| puts html('td', s) }
 puts html('td', suspicious.inject(:+), class: 'summary')
+suspicious.each{|s| puts html('td', s) }
 puts '</tr>'
 puts '<tr class="good">'
 puts html('th', "good", class: 'summary')
-suspicious.zip(total).each{|s, t| puts html('td', t - s) }
 puts html('td', total.inject(:+) - suspicious.inject(:+), class: 'summary')
+suspicious.zip(total).each{|s, t| puts html('td', t - s) }
 puts '</tr>'
 puts '<tr class="total">'
 puts html('th', "total", class: 'summary')
-total.each{|s| puts html('td', s) }
 puts html('td', total.inject(:+), class: 'summary')
+total.each{|s| puts html('td', s) }
 puts '</tr>'
 puts '<tr class="suspc">'
 puts html('th', "suspc", class: 'summary')
-suspicious.zip(total).each{|s, t| puts html('td', percent(s, t)) }
 puts html('td', percent(suspicious.inject(:+), total.inject(:+)), class: 'summary')
+suspicious.zip(total).each{|s, t| puts html('td', percent(s, t)) }
 puts '</tr>'
 
 puts out.join("\n")
