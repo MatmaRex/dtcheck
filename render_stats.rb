@@ -14,11 +14,10 @@ def html name, text = nil, **attrs, &contents
 end
 
 def percent a, b
-	return '' if b === 0
-	return "#{(a.to_f/b*100).round(1)}%"
+	b === 0 ? '' : "#{(a.to_f/b*100).round(1)}%"
 end
 
-database = JSON.parse File.read('database.json'), symbolize_names: true
+database = JSON.parse(File.read('database.json'), symbolize_names: true)
 
 puts '<meta charset="utf-8">'
 puts '<link rel="stylesheet" type="text/css" href="styles.css">'
@@ -31,14 +30,13 @@ puts html('h1', title)
 headers = []
 rows = database[:sites].keys.map{|site| [site, []] }.to_h
 
-
 oldest_rev = database[:sites].values.map{|data| data[:revisions].values }.inject(:+).map{|a| a[:timestamp] }.min
 
 Date.strptime(oldest_rev).upto(Date.today).reverse_each do |day|
 	headers << day.iso8601
 	database[:sites].each do |site, data|
 		rows[site] << {
-			total: data[:revisions].values.select{|r| r[:timestamp].start_with? day.iso8601 }.length,
+			total:      data[:revisions].values.select{|r| r[:timestamp].start_with? day.iso8601 }.length,
 			suspicious: data[:revisions].values.select{|r| r[:timestamp].start_with? day.iso8601 }.count{|r| r[:suspicious] }
 		}
 	end
@@ -46,8 +44,8 @@ end
 
 puts html('p', "Choose rows:")
 row_info = {
-	'sus' => true,
-	'good' => false,
+	'sus'   => true,
+	'good'  => false,
 	'total' => true,
 	'suspc' => false,
 }
@@ -69,34 +67,26 @@ puts '</tr>'
 
 out = []
 rows.each do |site, data|
-	suspicious = data.map{|d| d[:suspicious] }.inject(:+)
-	total = data.map{|d| d[:total] }.inject(:+)
-
-	out << '<tr class="sus">'
-	out << html('th', site, rowspan: 4)
-	out << html('th', "sus")
-	out << html('td', suspicious)
-	data.each{|d| out << html('td', d[:suspicious]) }
-	out << '</tr>'
-	out << '<tr class="good">'
-	out << html('th', "good")
-	out << html('td', total - suspicious)
-	data.each{|d| out << html('td', d[:total] - d[:suspicious]) }
-	out << '</tr>'
-	out << '<tr class="total">'
-	out << html('th', "total")
-	out << html('td', total)
-	data.each{|d| out << html('td', d[:total]) }
-	out << '</tr>'
-	out << '<tr class="suspc">'
-	out << html('th', "suspc")
-	out << html('td', percent(suspicious, total) )
-	data.each{|d| out << html('td', percent(d[:suspicious], d[:total] )) }
-	out << '</tr>'
+	suspicious = data.reduce(0) {|sum,d| sum + d[:suspicious] }
+	total = data.reduce(0) {|sum,d| sum + d[:total] }
+  [
+    { type: "sus",   data: suspicious,                 proc: Proc.new { |d| d[:suspicious] }, rowspan: 4, },
+    { type: "good",  data: total - suspicious,         proc: Proc.new { |d| d[:total] - d[:suspicious] },
+    { type: "total", data: total,                      proc: Proc.new { |d| d[:total] } },
+    { type: "suspc", data: percent(suspicious, total), proc: Proc.new { |d| percent(d[:suspicious], d[:total]) } },
+  ].each do |info|
+    out << "<tr class='#{info[:type]}'>"
+    if (info[:rowspan]) {
+	    out << html('th', site, rowspan: info[:rowspan])
+    }
+	  out << html('th', info[:type])
+	  data.each{|d| out << html('td', info[:proc].call(d))
+	  out << '</tr>'
+ end
 end
 
-suspicious = headers.length.times.map{|i| rows.map{|site, r| r[i][:suspicious] }.inject(:+) }
-total = headers.length.times.map{|i| rows.map{|site, r| r[i][:total] }.inject(:+) }
+suspicious = headers.length.times.map{|i| rows.reduce(0) {|sum, site, r| sum + r[i][:suspicious] } }
+total = headers.length.times.map{|i| rows.reduce(0) {|sum, site, r| sum + r[i][:total] } }
 
 puts '<tr class="sus">'
 puts html('th', "All sites", rowspan: 4, class: 'summary')
