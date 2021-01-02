@@ -92,10 +92,6 @@ sites.each do |site|
 		database[:sites][site][:revisions][rev][:timestamp] = rc['timestamp']
 		database[:sites][site][:revisions][rev][:diffsize] = rc['newlen'] - rc['oldlen'] rescue nil
 
-		if database[:sites][site][:revisions][rev][:diffsize] && database[:sites][site][:revisions][rev][:diffsize] > 10_000
-			suspicious = true
-		end
-
 		if !database[:sites][site][:revisions][rev][:diff]
 			compare = api_query site, "action=compare&format=json&fromrev=#{rev}&torelative=prev&uselang=en" rescue next
 			diff = compare['compare']['*'] rescue next
@@ -116,6 +112,8 @@ sites.each do |site|
 				task_ids = resp['result']['data'].map{|a| a['id'] }
 				database[:sites][site][:revisions][rev][:task_ids] = task_ids
 			end
+		else
+			database[:sites][site][:revisions][rev].delete :suspicious
 		end
 	end
 end
