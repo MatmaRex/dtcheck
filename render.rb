@@ -86,6 +86,7 @@ database[:sites].each do |site, site_data|
 	rows << html('tr'){
 		html('th', "Diff") +
 		html('th', "Date") +
+		html('th', "Title") +
 		html('th', "Revision") +
 		html('th', "Notes")
 	}
@@ -132,10 +133,15 @@ database[:sites].each do |site, site_data|
 			rows << html('tr'){
 				html('td'){ html('button', "Toggle diff", class: 'diffbutton') } +
 				html('td', data[:timestamp]) +
+				html('td'){
+					data[:title] ?
+						html('a', data[:title], href: "https://#{site}/?title=#{CGI.escape data[:title]}") :
+						'?'
+				} +
 				html('td'){ html('a', rev, href: "https://#{site}/?diff=#{rev}") } +
 				html('td'){ html('ul'){ notes.join '' } }
 			} + html('tr', style: 'display: none;'){
-				html('td', colspan: 4){ make_diff_table diff }
+				html('td', colspan: 5){ make_diff_table diff }
 			}
 		end
 	end

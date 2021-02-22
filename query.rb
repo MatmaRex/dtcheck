@@ -81,7 +81,7 @@ sites.each do |site|
 	}
 
 	recentchanges = api_query_continue site, "action=query&format=json&list=recentchanges" +
-		"&rctag=discussiontools-reply&rcprop=ids|timestamp|tags|sizes&rclimit=100" +
+		"&rctag=discussiontools-reply&rcprop=ids|timestamp|title|tags|sizes&rclimit=100" +
 		"&rcend=#{from_date}T00:00:00Z&rcstart=#{to_date}T23:59:59Z"
 	recentchanges['query']['recentchanges'].each do |rc|
 		rev = rc['revid']
@@ -90,6 +90,7 @@ sites.each do |site|
 		database[:sites][site][:revisions][rev] ||= {}
 		database[:sites][site][:revisions][rev][:tags] = rc['tags']
 		database[:sites][site][:revisions][rev][:timestamp] = rc['timestamp']
+		database[:sites][site][:revisions][rev][:title] = rc['title']
 		database[:sites][site][:revisions][rev][:diffsize] = rc['newlen'] - rc['oldlen'] rescue nil
 
 		if !database[:sites][site][:revisions][rev][:diff]
