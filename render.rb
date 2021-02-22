@@ -120,7 +120,7 @@ database[:sites].each do |site, site_data|
 				notes << html('li', "Additions on existing lines")
 			end
 
-			if !data[:task_ids].empty?
+			if data[:task_ids] && !data[:task_ids].empty?
 				notes << html('li'){
 					html('abbr', "Related tasks", title: 'Tasks where this revision ID is mentioned') +
 					": " +
