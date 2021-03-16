@@ -43,22 +43,18 @@ def api_query_continue site, query
 	out
 end
 
-sites = %w[
-en.wikiversity.org
-www.mediawiki.org
-meta.wikimedia.org
-].map{|s| s.to_sym}
-
-# add all wikipedias
-res = api_query_continue('meta.wikimedia.org', 'action=sitematrix&format=json')
-res = res['sitematrix']
+# all Wikimedia sites
+res = api_query_continue('meta.wikimedia.org', 'action=sitematrix&format=json&smlimit=5000&formatversion=2')
+res_lang = res['sitematrix']
 	.select{|k, v| k =~ /^\d+$/ }
 	.values
-	.map{|a| a['site']}
+	.map{|a| a['site'] }
 	.flatten
-	.map{|a| a['url']}
-	.grep(/wikipedia/)
-sites += res.map{|a| a.sub 'https://', '' }.map{|s| s.to_sym}
+res_site = res['sitematrix']['specials']
+urls = ( res_lang + res_site )
+	.reject{|a| a['private'] || a['closed'] }
+	.map{|a| a['url'] }
+sites = urls.map{|a| a.sub 'https://', '' }.map{|s| s.to_sym}
 
 start_time = Time.now
 
