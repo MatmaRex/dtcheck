@@ -77,7 +77,12 @@ row_info.each do |rowtype, active|
 	}
 end
 
-puts '<table class="wikitable statistics">'
+puts '<table class="wikitable statistics" style="table-layout: fixed">'
+puts '<colgroup>'
+puts '<col style="width: 12em">'
+puts '<col style="width: 5em">'
+puts '<col style="width: 5em">'
+puts '</colgroup>'
 puts '<tr>'
 puts html('th', "Site", colspan: 2)
 puts html('th', month || "Last 30 days", class: 'summary')
