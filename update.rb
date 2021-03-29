@@ -21,5 +21,12 @@ count.times {
 
 system "ruby render_stats.rb > dtstats.html"
 
+month = Date.today
+while month > Date.new(2020, 9)
+	month = month.prev_month
+	puts month.strftime('%Y-%m')
+	system "ruby render_stats.rb #{month.strftime('%Y-%m')} > dtstats-#{month.strftime('%Y-%m')}.html"
+end
+
 end_time = Time.now
 puts "Total time: #{end_time - start_time} seconds."
