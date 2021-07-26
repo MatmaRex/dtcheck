@@ -81,6 +81,7 @@ sites.each do |site|
 		"&rcend=#{from_date}T00:00:00Z&rcstart=#{to_date}T23:59:59Z"
 	recentchanges['query']['recentchanges'].each do |rc|
 		rev = rc['revid']
+		oldrev = rc['old_revid']
 		suspicious = false
 
 		database[:sites][site][:revisions][rev] ||= {}
@@ -89,8 +90,8 @@ sites.each do |site|
 		database[:sites][site][:revisions][rev][:title] = rc['title']
 		database[:sites][site][:revisions][rev][:diffsize] = rc['newlen'] - rc['oldlen'] rescue nil
 
-		if !database[:sites][site][:revisions][rev][:diff]
-			compare = api_query site, "action=compare&format=json&fromrev=#{rev}&torelative=prev&uselang=en" rescue next
+		if !database[:sites][site][:revisions][rev][:diff] || !database[:sites][site][:revisions][rev][:oldrev]
+			compare = api_query site, "action=compare&format=json&fromrev=#{oldrev}&torev=#{rev}&uselang=en" rescue next
 			diff = compare['compare']['*'] rescue next
 		else
 			diff = database[:sites][site][:revisions][rev][:diff]
@@ -103,6 +104,7 @@ sites.each do |site|
 		if suspicious
 			database[:sites][site][:revisions][rev][:suspicious] = suspicious
 			database[:sites][site][:revisions][rev][:diff] = diff
+			database[:sites][site][:revisions][rev][:oldrev] = oldrev
 
 			resp = conduit_query 'maniphest.search', {'constraints[query]' => rev}
 			if resp
