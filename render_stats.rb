@@ -62,18 +62,18 @@ else
 end
 
 puts html('p', "Choose rows:")
-row_info = {
-	'sus' => true,
-	'good' => false,
-	'total' => true,
-	'suspc' => false,
-}
-row_info.each do |rowtype, active|
-	puts html('style', media: active ? 'not all' : 'all'){ "tr.#{rowtype} > *:not([rowspan]) { display: none; }" }
+row_info = [
+	['sus', 'sus', true],
+	['good', 'good', false],
+	['total', 'total', true],
+	['suspc', 'sus%', false],
+]
+row_info.each do |(rowclass, rowlabel, active)|
+	puts html('style', media: active ? 'not all' : 'all'){ "tr.#{rowclass} > *:not([rowspan]) { display: none; }" }
 	onchange = "this.parentNode.previousElementSibling.media = this.checked ? 'not all' : 'all';"
 	puts html('label'){
 		html('input', type: 'checkbox', checked: active, onchange: onchange) + ' ' +
-		html(nil, rowtype)
+		html(nil, rowlabel)
 	}
 end
 
@@ -106,7 +106,7 @@ rows.each do |site, data|
 	data.each{|d| out << html('td', d[:total]) }
 	out << '</tr>'
 	out << '<tr class="suspc">'
-	out << html('th', "suspc")
+	out << html('th', "sus%")
 	out << html('td', percent(suspicious, total) )
 	data.each{|d| out << html('td', percent(d[:suspicious], d[:total] )) }
 	out << '</tr>'
@@ -132,7 +132,7 @@ puts html('td', total.inject(:+), class: 'summary')
 total.each{|s| puts html('td', s) }
 puts '</tr>'
 puts '<tr class="suspc">'
-puts html('th', "suspc", class: 'summary')
+puts html('th', "sus%", class: 'summary')
 puts html('td', percent(suspicious.inject(:+), total.inject(:+)), class: 'summary')
 suspicious.zip(total).each{|s, t| puts html('td', percent(s, t)) }
 puts '</tr>'
