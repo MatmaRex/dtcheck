@@ -18,7 +18,8 @@ def percent a, b
 	return "#{(a.to_f/b*100).round(1)}%"
 end
 
-month = ARGV[0] || nil
+month = ARGV[0] && ARGV[0] != '' ? ARGV[0] : nil
+fields = (ARGV[1] || 'sus,total').split(',')
 database = JSON.parse File.read('database.json'), symbolize_names: true
 
 puts '<meta charset="utf-8">'
@@ -61,21 +62,25 @@ else
 	puts html('a', 'Previous', href: "dtstats-#{prev_month.strftime('%Y-%m')}.html")
 end
 
-puts html('p', "Choose rows:")
 row_info = [
-	['sus', 'sus', true],
-	['good', 'good', false],
-	['total', 'total', true],
-	['suspc', 'sus%', false],
+	['sus', 'sus'],
+	['good', 'good'],
+	['total', 'total'],
+	['suspc', 'sus%'],
 ]
-row_info.each do |(rowclass, rowlabel, active)|
-	puts html('style', media: active ? 'not all' : 'all'){ "tr.#{rowclass} > *:not([rowspan]) { display: none; }" }
-	onchange = "this.parentNode.previousElementSibling.media = this.checked ? 'not all' : 'all';"
-	puts html('label'){
-		html('input', type: 'checkbox', checked: active, onchange: onchange) + ' ' +
-		html(nil, rowlabel)
-	}
-end
+puts html('form', action: 'dtstats.rb') {
+	html('p', "Choose rows: ") {
+		row_info.map {|(rowclass, rowlabel)|
+			active = fields.include? rowclass
+			html('label'){
+				html('input', type: 'checkbox', checked: active, name: 'field', value: rowclass) + ' ' +
+				html(nil, rowlabel)
+			}
+		}.join ' '
+	} +
+	( month ? html('input', type: 'hidden', name: 'month', value: month) : '' ) +
+	html('input', type: 'submit')
+}
 
 puts '<table class="wikitable statistics">'
 puts '<tr>'
@@ -89,53 +94,77 @@ rows.each do |site, data|
 	suspicious = data.map{|d| d[:suspicious] }.inject(:+)
 	total = data.map{|d| d[:total] }.inject(:+)
 
-	out << '<tr class="sus">'
-	out << html('th', site, rowspan: 4)
-	out << html('th', "sus")
-	out << html('td', suspicious)
-	data.each{|d| out << html('td', d[:suspicious]) }
-	out << '</tr>'
-	out << '<tr class="good">'
-	out << html('th', "good")
-	out << html('td', total - suspicious)
-	data.each{|d| out << html('td', d[:total] - d[:suspicious]) }
-	out << '</tr>'
-	out << '<tr class="total">'
-	out << html('th', "total")
-	out << html('td', total)
-	data.each{|d| out << html('td', d[:total]) }
-	out << '</tr>'
-	out << '<tr class="suspc">'
-	out << html('th', "sus%")
-	out << html('td', percent(suspicious, total) )
-	data.each{|d| out << html('td', percent(d[:suspicious], d[:total] )) }
-	out << '</tr>'
+	header = html('th', site, rowspan: fields.length)
+	if fields.include? 'sus'
+		out << '<tr>'
+		out << header if header; header = nil
+		out << html('th', "sus")
+		out << html('td', suspicious)
+		data.each{|d| out << html('td', d[:suspicious]) }
+		out << '</tr>'
+	end
+	if fields.include? 'good'
+		out << '<tr>'
+		out << header if header; header = nil
+		out << html('th', "good")
+		out << html('td', total - suspicious)
+		data.each{|d| out << html('td', d[:total] - d[:suspicious]) }
+		out << '</tr>'
+	end
+	if fields.include? 'total'
+		out << '<tr>'
+		out << header if header; header = nil
+		out << html('th', "total")
+		out << html('td', total)
+		data.each{|d| out << html('td', d[:total]) }
+		out << '</tr>'
+	end
+	if fields.include? 'suspc'
+		out << '<tr>'
+		out << header if header; header = nil
+		out << html('th', "sus%")
+		out << html('td', percent(suspicious, total) )
+		data.each{|d| out << html('td', percent(d[:suspicious], d[:total] )) }
+		out << '</tr>'
+	end
 end
 
 suspicious = headers.length.times.map{|i| rows.map{|site, r| r[i][:suspicious] }.inject(:+) }
 total = headers.length.times.map{|i| rows.map{|site, r| r[i][:total] }.inject(:+) }
 
-puts '<tr class="sus">'
-puts html('th', "All sites", rowspan: 4, class: 'summary')
-puts html('th', "sus", class: 'summary')
-puts html('td', suspicious.inject(:+), class: 'summary')
-suspicious.each{|s| puts html('td', s) }
-puts '</tr>'
-puts '<tr class="good">'
-puts html('th', "good", class: 'summary')
-puts html('td', total.inject(:+) - suspicious.inject(:+), class: 'summary')
-suspicious.zip(total).each{|s, t| puts html('td', t - s) }
-puts '</tr>'
-puts '<tr class="total">'
-puts html('th', "total", class: 'summary')
-puts html('td', total.inject(:+), class: 'summary')
-total.each{|s| puts html('td', s) }
-puts '</tr>'
-puts '<tr class="suspc">'
-puts html('th', "sus%", class: 'summary')
-puts html('td', percent(suspicious.inject(:+), total.inject(:+)), class: 'summary')
-suspicious.zip(total).each{|s, t| puts html('td', percent(s, t)) }
-puts '</tr>'
+header = html('th', "All sites", rowspan: fields.length, class: 'summary')
+if fields.include? 'sus'
+	puts '<tr>'
+	puts header if header; header = nil
+	puts html('th', "sus", class: 'summary')
+	puts html('td', suspicious.inject(:+), class: 'summary')
+	suspicious.each{|s| puts html('td', s) }
+	puts '</tr>'
+end
+if fields.include? 'good'
+	puts '<tr>'
+	puts header if header; header = nil
+	puts html('th', "good", class: 'summary')
+	puts html('td', total.inject(:+) - suspicious.inject(:+), class: 'summary')
+	suspicious.zip(total).each{|s, t| puts html('td', t - s) }
+	puts '</tr>'
+end
+if fields.include? 'total'
+	puts '<tr>'
+	puts header if header; header = nil
+	puts html('th', "total", class: 'summary')
+	puts html('td', total.inject(:+), class: 'summary')
+	total.each{|s| puts html('td', s) }
+	puts '</tr>'
+end
+if fields.include? 'suspc'
+	puts '<tr>'
+	puts header if header; header = nil
+	puts html('th', "sus%", class: 'summary')
+	puts html('td', percent(suspicious.inject(:+), total.inject(:+)), class: 'summary')
+	suspicious.zip(total).each{|s, t| puts html('td', percent(s, t)) }
+	puts '</tr>'
+end
 
 puts out.join("\n")
 
