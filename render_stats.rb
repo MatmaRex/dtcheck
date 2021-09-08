@@ -55,7 +55,7 @@ if month
 	next_month = Date.strptime(month, '%Y-%m').next_month
 	puts html('a', 'Previous', href: "dtstats-#{prev_month.strftime('%Y-%m')}.html")
 	puts '•'
-	puts html('a', 'Next', href: "dtcheck-#{next_month.strftime('%Y-%m')}.html")
+	puts html('a', 'Next', href: "dtstats-#{next_month.strftime('%Y-%m')}.html")
 else
 	prev_month = Date.today.prev_month
 	puts html('a', 'Previous', href: "dtstats-#{prev_month.strftime('%Y-%m')}.html")
