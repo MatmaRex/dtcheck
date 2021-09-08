@@ -42,12 +42,13 @@ if month
 else
 	range = Date.today.prev_day(30).upto(Date.today).select{|d| d >= Date.strptime(oldest_rev) }
 end
-range.reverse_each do |day|
-	headers << day.iso8601
+range.map{|day| day.iso8601 }.reverse_each do |day|
+	headers << day
 	database[:sites].each do |site, data|
+		data_day = data[:revisions].values.select{|r| r[:timestamp].start_with? day }
 		rows[site] << {
-			total: data[:revisions].values.select{|r| r[:timestamp].start_with? day.iso8601 }.length,
-			suspicious: data[:revisions].values.select{|r| r[:timestamp].start_with? day.iso8601 }.count{|r| r[:suspicious] }
+			total: data_day.length,
+			suspicious: data_day.count{|r| r[:suspicious] }
 		}
 	end
 end
