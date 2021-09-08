@@ -13,6 +13,12 @@ unless fields.all?{|f| %w[sus good total suspc].include? f }
 	exit
 end
 
-output = `ruby render_stats.rb "#{month}" "#{fields.join(',')}"`
+sort_date = cgi.params['sort_date'].last
+if sort_date && sort_date != '' && sort_date !~ /^\d{4}-\d{2}-\d{2}$/
+	cgi.out( 'status' => 'BAD_REQUEST' ){ 'Bad request' }
+	exit
+end
+
+output = `ruby render_stats.rb "#{month}" "#{fields.join(',')}" "#{sort_date}"`
 
 cgi.out{ output }

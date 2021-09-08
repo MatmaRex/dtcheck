@@ -20,6 +20,7 @@ end
 
 month = ARGV[0] && ARGV[0] != '' ? ARGV[0] : nil
 fields = (ARGV[1] || 'sus,total').split(',')
+sort_date = ARGV[2] && ARGV[2] != '' ? ARGV[2] : nil
 database = JSON.parse File.read('database.json'), symbolize_names: true
 
 puts '<meta charset="utf-8">'
@@ -79,6 +80,12 @@ puts html('form', action: 'dtstats.rb') {
 		}.join ' '
 	} +
 	( month ? html('input', type: 'hidden', name: 'month', value: month) : '' ) +
+	html('p', "Sort by: ") {
+		html('select', name: 'sort_date') {
+			html('option', month || "Last 30 days", value: '', selected: sort_date == nil ) +
+			headers.map{|h| html('option', h, value: h, selected: sort_date == h ) }.join('')
+		}
+	} +
 	html('input', type: 'submit')
 }
 
@@ -88,6 +95,11 @@ puts html('th', "Site", colspan: 2)
 puts html('th', month || "Last 30 days", class: 'summary')
 headers.each{|h| puts html('th'){ html 'a', h, href: "dtcheck-#{h}.html" } }
 puts '</tr>'
+
+sort_index = sort_date ? headers.index(sort_date) : nil
+rows = Hash[ rows.sort_by{|site, data|
+	sort_index ? data[sort_index][:total] : data.map{|d| d[:total] }.inject(:+)
+}.reverse ]
 
 out = []
 rows.each do |site, data|
