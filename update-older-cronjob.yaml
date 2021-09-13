@@ -27,4 +27,7 @@ spec:
             env:
             - name: HOME
               value: /data/project/dtcheck
+            resources:
+              limits:
+                memory: "1Gi"
           restartPolicy: OnFailure
