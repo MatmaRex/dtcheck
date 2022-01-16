@@ -29,5 +29,5 @@ spec:
               value: /data/project/dtcheck
             resources:
               limits:
-                memory: "1Gi"
+                memory: "2Gi"
           restartPolicy: OnFailure
