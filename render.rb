@@ -108,7 +108,7 @@ database[:sites].each do |site, site_data|
 			notes << html('li', "Changed lines: +#{diff.scan(/diff-addedline/).length} −#{diff.scan(/diff-deletedline/).length}")
 
 			# wow, this is awful, but i don't want any big dependencies to parse it better or generate my own diffs
-			has_deleted_lines_nonempty = diff =~ /<td class="diff-deletedline">(<div>)?[^<]+(<\/div>)?<\/td>\s*<td colspan="2" class="diff-empty">/
+			has_deleted_lines_nonempty = diff =~ /<td class="diff-deletedline(?: diff-side-deleted)?">(<div>)?[^<]+(<\/div>)?<\/td>\s*<td colspan="2" class="diff-empty(?: diff-side-added)?">/
 			has_deleted_chars_nonwhitespace = diff =~ /<del class="diffchange diffchange-inline">[^<]*[^\s<][^<]*<\/del>/
 			if !has_deleted_lines_nonempty && !has_deleted_chars_nonwhitespace
 				notes << html('li', "White-space deletions only")
