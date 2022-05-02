@@ -1,9 +1,11 @@
+require_relative 'vendor/bundle/bundler/setup'
 require 'net/http'
 require 'uri'
 require 'json'
 require 'pp'
 require 'cgi'
 require 'date'
+require 'sequel'
 
 CONDUIT_API_TOKEN = File.read('.conduit_api_token').strip rescue nil
 
@@ -54,28 +56,38 @@ res_site = res['sitematrix']['specials']
 urls = ( res_lang + res_site )
 	.reject{|a| a['private'] || a['closed'] }
 	.map{|a| a['url'] }
-sites = urls.map{|a| a.sub 'https://', '' }.map{|s| s.to_sym}
+sites = urls.map{|a| a.sub 'https://', '' }
 
 start_time = Time.now
 
+database = Sequel.sqlite 'database.sqlite'
+if database.tables.empty?
+	database.run File.read 'schema.sql'
+end
+
 if File.exist? 'database.json'
-	database = JSON.parse File.read('database.json'), symbolize_names: true
-else
-	database = {
-		sites: {},
-		last_updated: nil,
-		last_updated_duration: nil
-	}
+	json = JSON.parse File.read('database.json'), symbolize_names: true
+
+	# in transaction to speed up import
+	database.transaction do
+		json[:sites].each do |site, values|
+			values[:revisions].each do |revid, row|
+				row[:site] = site.to_s
+				row[:revid] = revid.to_s.to_i
+				row[:tags] = row[:tags].to_json if row[:tags]
+				row[:task_ids] = row[:task_ids].to_json if row[:task_ids]
+				database[:revisions].insert row
+			end
+		end
+	end
+
+	File.rename 'database.json', 'database.json.old'
 end
 
 from_date = ARGV[0] || Date.today.iso8601
 to_date = ARGV[1] || Date.today.iso8601
 
 sites.each do |site|
-	database[:sites][site] ||= {
-		revisions: {}
-	}
-
 	recentchanges = api_query_continue site, "action=query&format=json&list=recentchanges" +
 		"&rctag=discussiontools-reply&rcprop=ids|timestamp|title|tags|sizes&rclimit=100" +
 		"&rcend=#{from_date}T00:00:00Z&rcstart=#{to_date}T23:59:59Z"
@@ -84,17 +96,17 @@ sites.each do |site|
 		oldrev = rc['old_revid']
 		suspicious = false
 
-		database[:sites][site][:revisions][rev] ||= {}
-		database[:sites][site][:revisions][rev][:tags] = rc['tags']
-		database[:sites][site][:revisions][rev][:timestamp] = rc['timestamp']
-		database[:sites][site][:revisions][rev][:title] = rc['title']
-		database[:sites][site][:revisions][rev][:diffsize] = rc['newlen'] - rc['oldlen'] rescue nil
+		row = database[:revisions].where({ site: site, revid: rev }).first || { site: site, revid: rev }
+		row[:tags] = rc['tags'].to_json
+		row[:timestamp] = rc['timestamp']
+		row[:title] = rc['title']
+		row[:diffsize] = rc['newlen'] - rc['oldlen'] rescue nil
 
-		if !database[:sites][site][:revisions][rev][:diff] || !database[:sites][site][:revisions][rev][:oldrev]
+		if !row[:diff] || !row[:oldrev]
 			compare = api_query site, "action=compare&format=json&fromrev=#{oldrev}&torev=#{rev}&uselang=en" rescue next
 			diff = compare['compare']['*'] rescue next
 		else
-			diff = database[:sites][site][:revisions][rev][:diff]
+			diff = row[:diff]
 		end
 
 		if diff =~ /diff-deletedline/
@@ -102,24 +114,26 @@ sites.each do |site|
 		end
 
 		if suspicious
-			database[:sites][site][:revisions][rev][:suspicious] = suspicious
-			database[:sites][site][:revisions][rev][:diff] = diff
-			database[:sites][site][:revisions][rev][:oldrev] = oldrev
+			row[:suspicious] = suspicious
+			row[:diff] = diff
+			row[:oldrev] = oldrev
 
 			resp = conduit_query 'maniphest.search', {'constraints[query]' => rev}
 			if resp
 				task_ids = resp['result']['data'].map{|a| a['id'] }
-				database[:sites][site][:revisions][rev][:task_ids] = task_ids
+				row[:task_ids] = task_ids.to_json
 			end
 		else
-			database[:sites][site][:revisions][rev].delete :suspicious
+			row.delete :suspicious
 		end
+
+		database[:revisions].insert_conflict(:replace).insert row
 	end
 end
 
 end_time = Time.now
 
-database[:last_updated] = end_time
-database[:last_updated_duration] = end_time - start_time
-
-File.write 'database.json', JSON.pretty_generate(database)
+database[:meta].update( {
+	last_updated: end_time,
+	last_updated_duration: end_time - start_time,
+} )

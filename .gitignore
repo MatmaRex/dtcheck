@@ -1,5 +1,10 @@
+.bundle
 .conduit_api_token
 database.json
+database.json.old
+database.sqlite
 dtstats.html
 dtcheck-*.html
 dtstats-*.html
+Gemfile.lock
+vendor/

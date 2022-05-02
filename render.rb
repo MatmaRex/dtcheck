@@ -1,7 +1,9 @@
+require_relative 'vendor/bundle/bundler/setup'
 require 'json'
 require 'pp'
 require 'cgi'
 require 'date'
+require 'sequel'
 
 def html name, text = nil, **attrs, &contents
 	attrs_str = attrs.map{|k,v| " #{CGI.escapeHTML k.to_s}=\"#{CGI.escapeHTML v.to_s}\"" }.join ''
@@ -21,7 +23,7 @@ def make_diff_table diff
 end
 
 day_to_check = ARGV[0] || Date.today.iso8601
-database = JSON.parse File.read('database.json'), symbolize_names: true
+database = Sequel.sqlite 'database.sqlite'
 
 puts '<meta charset="utf-8">'
 puts '<link rel="stylesheet" type="text/css" href="styles.css">'
@@ -37,12 +39,8 @@ puts html('a', 'Previous', href: "dtcheck-#{yesterday}.html")
 puts '•'
 puts html('a', 'Next', href: "dtcheck-#{tomorrow}.html")
 
-suspicious = database[:sites].map{|site, data|
-	data[:revisions].values.select{|r| r[:timestamp].start_with? day_to_check }.count{|r| r[:suspicious] }
-}.inject(:+)
-total = database[:sites].map{|site, data|
-	data[:revisions].values.select{|r| r[:timestamp].start_with? day_to_check }.length
-}.inject(:+)
+suspicious = database.fetch("select sum(suspicious) from revisions where date(timestamp) = ?", day_to_check).get || 0
+total = database.fetch("select count(*) from revisions where date(timestamp) = ?", day_to_check).get
 percent = total.nonzero? ? (suspicious.to_f/total*100).round(1) : 0
 puts html 'p', "#{suspicious} suspicious edits in #{total} replies (#{percent}%)."
 
@@ -52,12 +50,11 @@ end
 
 
 toc = html('ul'){
-	database[:sites].map{|site, data|
+	database.fetch("select site, sum(suspicious), count(*) from revisions where date(timestamp) = ? group by site", day_to_check).map{|row|
 		html('li') {
-			site_suspicious =
-				data[:revisions].values.select{|r| r[:timestamp].start_with? day_to_check }.count{|r| r[:suspicious] }
-			site_total =
-				data[:revisions].values.select{|r| r[:timestamp].start_with? day_to_check }.length
+			site = row[:site]
+			site_suspicious = row[:'sum(suspicious)'] || 0
+			site_total = row[:'count(*)']
 
 			html(site_suspicious != 0 ? 'a' : nil, site, href: '#' + site.to_s) +
 			html(nil, " (#{site_suspicious}/#{site_total})")
@@ -69,12 +66,13 @@ puts html('details'){
 }
 
 out = []
-database[:sites].each do |site, site_data|
-	revisions = site_data[:revisions].select{|rev, data| data[:timestamp].start_with? day_to_check }
+database.fetch("select distinct site from revisions").map(:site).each do |site|
+	revisions = database.fetch("select * from revisions where site = ? and date(timestamp) = ?", site, day_to_check).all
+
 	site_suspicious =
-		revisions.select{|rev, data| data[:timestamp].start_with? day_to_check }.count{|rev, data| data[:suspicious] }
+		revisions.select{|data| data[:timestamp].start_with? day_to_check }.count{|data| data[:suspicious] }
 	site_total =
-		revisions.select{|rev, data| data[:timestamp].start_with? day_to_check }.length
+		revisions.select{|data| data[:timestamp].start_with? day_to_check }.length
 
 	if site_suspicious == 0
 		next
@@ -91,13 +89,14 @@ database[:sites].each do |site, site_data|
 		html('th', "Notes")
 	}
 
-	revisions.each do |rev, data|
+	revisions.each do |data|
+		rev = data[:revid]
 		if data[:suspicious]
 			diff = data[:diff]
 			notes = []
 
 			notes << html('li'){
-				interesting_tags = data[:tags] - ['discussiontools', 'discussiontools-reply']
+				interesting_tags = JSON.parse(data[:tags]) - ['discussiontools', 'discussiontools-reply']
 				tags_html = interesting_tags.map{|t|
 					sus_tag = ['mw-reverted'].include?(t)
 					html(sus_tag ? 'strong' : nil, t)
@@ -121,11 +120,11 @@ database[:sites].each do |site, site_data|
 				notes << html('li', "Additions on existing lines")
 			end
 
-			if data[:task_ids] && !data[:task_ids].empty?
+			if data[:task_ids] && data[:task_ids] != '[]'
 				notes << html('li'){
 					html('abbr', "Related tasks", title: 'Tasks where this revision ID is mentioned') +
 					": " +
-					data[:task_ids].map{|t|
+					JSON.parse(data[:task_ids]).map{|t|
 						html 'a', "T#{t}", href: "https://phabricator.wikimedia.org/T#{t}"
 					}.join(', ') }
 			end
@@ -155,7 +154,7 @@ puts out
 
 puts html('hr')
 
-puts html('p', "Generated at #{database[:last_updated]} in #{(database[:last_updated_duration]).ceil} seconds.")
+puts html('p', "Generated at #{database[:meta].get(:last_updated)} in #{(database[:meta].get(:last_updated_duration)).ceil} seconds.")
 puts html('p'){ html('a', 'Source code', href: "https://github.com/MatmaRex/dtcheck") }
 
 puts html('script', src: 'script.js')

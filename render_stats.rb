@@ -1,7 +1,9 @@
+require_relative 'vendor/bundle/bundler/setup'
 require 'json'
 require 'pp'
 require 'cgi'
 require 'date'
+require 'sequel'
 
 def html name, text = nil, **attrs, &contents
 	attrs_str = attrs.select{|k,v| v}.map{|k,v| " #{CGI.escapeHTML k.to_s}=\"#{CGI.escapeHTML v.to_s}\"" }.join ''
@@ -21,7 +23,7 @@ end
 month = ARGV[0] && ARGV[0] != '' ? ARGV[0] : nil
 fields = (ARGV[1] || 'sus,total').split(',')
 sort_date = ARGV[2] && ARGV[2] != '' ? ARGV[2] : nil
-database = JSON.parse File.read('database.json'), symbolize_names: true
+database = Sequel.sqlite 'database.sqlite'
 
 puts '<meta charset="utf-8">'
 puts '<link rel="stylesheet" type="text/css" href="styles.css">'
@@ -31,27 +33,33 @@ title = "Reply tool check statistics"
 puts html('title', title)
 puts html('h1', title)
 
-headers = []
-rows = database[:sites].keys.map{|site| [site, []] }.to_h
-
-
-oldest_rev = database[:sites].values.map{|data| data[:revisions].values }.inject(:+).map{|a| a[:timestamp] }.min
+row_headers = database.fetch("select distinct site from revisions").map(:site)
+oldest_rev = database.fetch("select min(timestamp) from revisions").get
 
 if month
 	range = Date.strptime(month, '%Y-%m').upto( Date.strptime(month, '%Y-%m').next_month.prev_day )
 else
 	range = Date.today.prev_day(30).upto(Date.today).select{|d| d >= Date.strptime(oldest_rev) }
 end
-range.map{|day| day.iso8601 }.reverse_each do |day|
-	headers << day
-	database[:sites].each do |site, data|
-		data_day = data[:revisions].values.select{|r| r[:timestamp].start_with? day }
-		rows[site] << {
-			total: data_day.length,
-			suspicious: data_day.count{|r| r[:suspicious] }
-		}
+headers = range.map{|day| day.iso8601 }.reverse
+
+rows = row_headers.map{|site| [ site, headers.map{ {
+	total: 0,
+	suspicious: 0,
+} } ] }.to_h
+
+database
+	.fetch("
+		select site, date(timestamp) as day, count(*) as total, sum(suspicious) as suspicious
+		from revisions
+		where site in #{database.literal row_headers}
+		and date(timestamp) in #{database.literal headers}
+		group by site, date(timestamp)
+	")
+	.each do |data|
+		rows[ data[:site] ][ headers.index(data[:day]) ][:total] = data[:total]
+		rows[ data[:site] ][ headers.index(data[:day]) ][:suspicious] = data[:suspicious] || 0
 	end
-end
 
 if month
 	prev_month = Date.strptime(month, '%Y-%m').prev_month
@@ -183,5 +191,5 @@ puts out.join("\n")
 
 puts '</table>'
 
-puts html('p', "Generated at #{database[:last_updated]} in #{(database[:last_updated_duration]).ceil} seconds.")
+puts html('p', "Generated at #{database[:meta].get(:last_updated)} in #{(database[:meta].get(:last_updated_duration)).ceil} seconds.")
 puts html('p'){ html('a', 'Source code', href: "https://github.com/MatmaRex/dtcheck") }
