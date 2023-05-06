@@ -1,8 +1,7 @@
 .bundle
 .conduit_api_token
-database.json
-database.json.old
 database.sqlite
+database.sqlite.old
 dtstats.html
 dtcheck-*.html
 dtstats-*.html

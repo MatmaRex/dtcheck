@@ -39,8 +39,8 @@ puts html('a', 'Previous', href: "dtcheck-#{yesterday}.html")
 puts '•'
 puts html('a', 'Next', href: "dtcheck-#{tomorrow}.html")
 
-suspicious = database.fetch("select sum(suspicious) from revisions where date(timestamp) = ?", day_to_check).get || 0
-total = database.fetch("select count(*) from revisions where date(timestamp) = ?", day_to_check).get
+suspicious = database.fetch("select sum(suspicious) from siterevs where date(timestamp) = ?", day_to_check).get || 0
+total = database.fetch("select count(*) from siterevs where date(timestamp) = ?", day_to_check).get
 percent = total.nonzero? ? (suspicious.to_f/total*100).round(1) : 0
 puts html 'p', "#{suspicious} suspicious edits in #{total} replies (#{percent}%)."
 
@@ -50,7 +50,7 @@ end
 
 
 toc = html('ul'){
-	database.fetch("select site, sum(suspicious), count(*) from revisions where date(timestamp) = ? group by site", day_to_check).map{|row|
+	database.fetch("select site, sum(suspicious), count(*) from siterevs where date(timestamp) = ? group by site", day_to_check).map{|row|
 		html('li') {
 			site = row[:site]
 			site_suspicious = row[:'sum(suspicious)'] || 0
@@ -66,8 +66,8 @@ puts html('details'){
 }
 
 out = []
-database.fetch("select distinct site from revisions").map(:site).each do |site|
-	revisions = database.fetch("select * from revisions where site = ? and date(timestamp) = ?", site, day_to_check).all
+database.fetch("select distinct site from siterevs").map(:site).each do |site|
+	revisions = database.fetch("select * from siterevs where site = ? and date(timestamp) = ?", site, day_to_check).all
 
 	site_suspicious =
 		revisions.select{|data| data[:timestamp].start_with? day_to_check }.count{|data| data[:suspicious] }
@@ -90,13 +90,17 @@ database.fetch("select distinct site from revisions").map(:site).each do |site|
 	}
 
 	revisions.each do |data|
-		rev = data[:revid]
+		tagids = database[:revtags].where(siterevid: data[:siterevid]).map(:tagid)
+		tags = database[:tags].where(tagid: tagids).map(:tag)
+
+		rev = data[:revision]
+
 		if data[:suspicious]
 			diff = data[:diff]
 			notes = []
 
 			notes << html('li'){
-				interesting_tags = JSON.parse(data[:tags]) - ['discussiontools', 'discussiontools-reply']
+				interesting_tags = tags - ['discussiontools', 'discussiontools-reply']
 				tags_html = interesting_tags.map{|t|
 					sus_tag = ['mw-reverted'].include?(t)
 					html(sus_tag ? 'strong' : nil, t)

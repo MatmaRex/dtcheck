@@ -33,8 +33,8 @@ title = "Reply tool check statistics"
 puts html('title', title)
 puts html('h1', title)
 
-row_headers = database.fetch("select distinct site from revisions").map(:site)
-oldest_rev = database.fetch("select min(timestamp) from revisions").get
+row_headers = database.fetch("select distinct site from siterevs").map(:site)
+oldest_rev = database.fetch("select min(timestamp) from siterevs").get
 
 if month
 	range = Date.strptime(month, '%Y-%m').upto( Date.strptime(month, '%Y-%m').next_month.prev_day )
@@ -51,7 +51,7 @@ rows = row_headers.map{|site| [ site, headers.map{ {
 database
 	.fetch("
 		select site, date(timestamp) as day, count(*) as total, sum(suspicious) as suspicious
-		from revisions
+		from siterevs
 		where site in #{database.literal row_headers}
 		and date(timestamp) in #{database.literal headers}
 		group by site, date(timestamp)

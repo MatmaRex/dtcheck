@@ -65,25 +65,6 @@ if database.tables.empty?
 	database.run File.read 'schema.sql'
 end
 
-if File.exist? 'database.json'
-	json = JSON.parse File.read('database.json'), symbolize_names: true
-
-	# in transaction to speed up import
-	database.transaction do
-		json[:sites].each do |site, values|
-			values[:revisions].each do |revid, row|
-				row[:site] = site.to_s
-				row[:revid] = revid.to_s.to_i
-				row[:tags] = row[:tags].to_json if row[:tags]
-				row[:task_ids] = row[:task_ids].to_json if row[:task_ids]
-				database[:revisions].insert row
-			end
-		end
-	end
-
-	File.rename 'database.json', 'database.json.old'
-end
-
 from_date = ARGV[0] || Date.today.iso8601
 to_date = ARGV[1] || Date.today.iso8601
 
@@ -96,8 +77,7 @@ sites.each do |site|
 		oldrev = rc['old_revid']
 		suspicious = false
 
-		row = database[:revisions].where({ site: site, revid: rev }).first || { site: site, revid: rev }
-		row[:tags] = rc['tags'].to_json
+		row = database[:siterevs].where({ site: site, revision: rev }).first || { site: site, revision: rev }
 		row[:timestamp] = rc['timestamp']
 		row[:title] = rc['title']
 		row[:diffsize] = rc['newlen'] - rc['oldlen'] rescue nil
@@ -127,7 +107,12 @@ sites.each do |site|
 			row.delete :suspicious
 		end
 
-		database[:revisions].insert_conflict(:replace).insert row
+		siterevid = database[:siterevs].insert_conflict(:replace).insert row
+		rc['tags'].each{|tag|
+			tagid = database[:tags].where(tag: tag).get(:tagid)
+			tagid = database[:tags].insert( { tag: tag } ) if !tagid
+			database[:revtags].insert_conflict(:ignore).insert( { siterevid: siterevid, tagid: tagid } )
+		}
 	end
 end
 

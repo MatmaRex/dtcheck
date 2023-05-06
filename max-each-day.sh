@@ -1,1 +1,1 @@
-sqlite3 -column database.sqlite "select date(timestamp), max( time(timestamp) ) from revisions group by date(timestamp)"
+sqlite3 -column database.sqlite "select date(timestamp), max( time(timestamp) ) from siterevs group by date(timestamp)"
