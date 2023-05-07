@@ -1,5 +1,5 @@
 ---
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: update-today
@@ -8,7 +8,7 @@ metadata:
     # The toolforge=tool label will cause $HOME and other paths to be mounted from Toolforge
     toolforge: tool
 spec:
-  schedule: "0 1-7/2,11-23/2 * * *"
+  schedule: "0 1,13 * * 1-6"
   jobTemplate:
     spec:
       template:
@@ -29,4 +29,4 @@ spec:
             resources:
               limits:
                 memory: "2Gi"
-          restartPolicy: OnFailure
+          restartPolicy: Never
