@@ -8,7 +8,7 @@ metadata:
     # The toolforge=tool label will cause $HOME and other paths to be mounted from Toolforge
     toolforge: tool
 spec:
-  schedule: "0 9 * * 7"
+  schedule: "0 9 * * 0"
   jobTemplate:
     spec:
       template:
