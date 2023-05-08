@@ -69,6 +69,7 @@ from_date = ARGV[0] || Date.today.iso8601
 to_date = ARGV[1] || Date.today.iso8601
 
 sites.each do |site|
+	puts site
 	recentchanges = api_query_continue site, "action=query&format=json&list=recentchanges" +
 		"&rctag=discussiontools-reply&rcprop=ids|timestamp|title|tags|sizes&rclimit=100" +
 		"&rcend=#{from_date}T00:00:00Z&rcstart=#{to_date}T23:59:59Z"
