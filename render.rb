@@ -33,6 +33,8 @@ title = "Reply tool check for #{day_to_check}"
 puts html('title', title)
 puts html('h1', title)
 
+puts File.read 'banner.html'
+
 yesterday = Date.strptime(day_to_check).prev_day.iso8601
 tomorrow = Date.strptime(day_to_check).next_day.iso8601
 puts html('a', 'Previous', href: "dtcheck-#{yesterday}.html")

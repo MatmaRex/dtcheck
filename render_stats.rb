@@ -33,6 +33,8 @@ title = "Reply tool check statistics"
 puts html('title', title)
 puts html('h1', title)
 
+puts File.read 'banner.html'
+
 row_headers = database.fetch("select distinct site from siterevs").map(:site)
 oldest_rev = database.fetch("select min(timestamp) from siterevs").get
 
